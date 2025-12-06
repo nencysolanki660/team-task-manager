@@ -27,4 +27,25 @@ class Handler extends ExceptionHandler
             //
         });
     }
+
+    public function render($request, Throwable $exception)
+    {
+        if ($request->is('api/*') || $request->wantsJson()) {
+            $status = 500;
+            $message = $exception->getMessage();
+
+            if ($exception instanceof \Illuminate\Validation\ValidationException) {
+                return response()->json(['success' => false, 'errors' => $exception->errors()], 422);
+            }
+            if (method_exists($exception, 'getStatusCode')) {
+                $status = $exception->getStatusCode();
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Server Error'
+            ], $status);
+        }
+        return parent::render($request, $exception);
+    }
 }
